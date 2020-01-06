@@ -35,44 +35,45 @@ def get_list(soup):
 
 wiki = wikipediaapi.Wikipedia('en')
 
-#site_list = open()
-#for site in site_list:
-name = "Asterisk"
-page = wiki.page("Talk:" + name)
+site_list = open("site_list")
+for name in site_list:
+    if name.endswith('\n'):
+        name = name.rstrip('\n')
+    print(name)
 
-sections = page.sections
+    page = wiki.page("Talk:" + name)
 
-sen_det = nltk.data.load("tokenizers/punkt/english.pickle")
-df = pd.DataFrame([],columns=['Section','Comment','User','Datetime'])
-n=0
+    sections = page.sections
 
-th = BeautifulSoup(requests.get("https://en.wikipedia.org/w/index.php?title=" + "Talk:" + name + "&offset=&limit=500&action=history").content, features="html.parser")
-tl = get_list(th)
+    sen_det = nltk.data.load("tokenizers/punkt/english.pickle")
+    df = pd.DataFrame([],columns=['Section','Comment','User','Datetime'])
+    n=0
 
+    th = BeautifulSoup(requests.get("https://en.wikipedia.org/w/index.php?title=" + "Talk:" + name + "&offset=&limit=500&action=history").content, features="html.parser")
+    tl = get_list(th)
 
-
-for sec in sections:
-    title = sec.title
-    comments = sec.text.splitlines()
+    for sec in sections:
+        title = sec.title
+        comments = sec.text.splitlines()
     
-    for comment in comments:
-        sents = sen_det.tokenize(comment)
-        if len(sents) > 1:
-            met = sents[-1]
-        else:
-            met = comment
+        for comment in comments:
+            sents = sen_det.tokenize(comment)
+            if len(sents) > 1:
+                met = sents[-1]
+            else:
+                met = comment
         
-        if '...' in met:
-            met = met.split('...')[-1]
+            if '...' in met:
+                met = met.split('...')[-1]
         
-        d = process_date(met)
-        if d == []:
-            d.append('N/A')
-        u = find_user(comment, tl)
+            d = process_date(met)
+            if d == []:
+                d.append('N/A')
+            u = find_user(comment, tl)
             
-        df = pd.concat([df,pd.DataFrame({'Section':title,'Comment':comment,'User':u,'Datetime':d[0]}, index = [n])])
-        n = n+1
+            df = pd.concat([df,pd.DataFrame({'Section':title,'Comment':comment,'User':u,'Datetime':d[0]}, index = [n])])
+            n = n+1
 
-print(df)
-out = open("wiki_comments.csv", "x")
-df.to_csv(path_or_buf=out)
+    on = name + "_comments.csv"
+    out = open(on, "x")
+    df.to_csv(path_or_buf=out)
